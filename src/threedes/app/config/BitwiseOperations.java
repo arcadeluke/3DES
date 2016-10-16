@@ -1,9 +1,9 @@
 package threedes.app.config;
 
 public enum BitwiseOperations {
-	AND,
-	OR, 
-	XOR,
-	NAND,
-	NOR,	
+    AND,
+    OR, 
+    XOR,
+    NAND,
+    NOR
 }

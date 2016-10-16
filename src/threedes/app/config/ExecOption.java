@@ -1,8 +1,8 @@
 package threedes.app.config;
 
 public enum ExecOption {
-	NONE,
-	GENKEY,
-	ENCRYPT,
-	DECRYPT
+    NONE,
+    GENKEY,
+    ENCRYPT,
+    DECRYPT
 }

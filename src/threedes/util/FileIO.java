@@ -14,36 +14,36 @@ import java.nio.file.Paths;
 
 public class FileIO {
 
-	public static String readFileToString(String file, Charset charSet)
-	{
-		if (charSet == null)
-		{
-			charSet = StandardCharsets.UTF_8;
-		}
-		
-		String inputText = null;
-		try {
-			inputText = new String(Files.readAllBytes(Paths.get(file)), charSet);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		return inputText;
-	}
-	
-	public static byte [] readFileToByteArray(String file)
-	{
-		byte [] inputBytes = null;
-		try {
-			inputBytes = Files.readAllBytes(Paths.get(file));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		return inputBytes;
-	}
-	
-	public static void writeBinaryFile(String file, byte [] content)
+    public static String readFileToString(String file, Charset charSet)
+    {
+        if (charSet == null)
+        {
+            charSet = StandardCharsets.UTF_8;
+        }
+        
+        String inputText = null;
+        try {
+            inputText = new String(Files.readAllBytes(Paths.get(file)), charSet);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        
+        return inputText;
+    }
+    
+    public static byte [] readFileToByteArray(String file)
+    {
+        byte [] inputBytes = null;
+        try {
+            inputBytes = Files.readAllBytes(Paths.get(file));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        
+        return inputBytes;
+    }
+    
+    public static void writeBinaryFile(String file, byte [] content)
     {
         try {
             BufferedOutputStream writer = new BufferedOutputStream(new FileOutputStream(new File(file)));
@@ -54,10 +54,10 @@ public class FileIO {
             e.printStackTrace();
         }
     }
-	
-	public static void writeTextFile(String file, String content)
-	{
-	    try {
+    
+    public static void writeTextFile(String file, String content)
+    {
+        try {
             BufferedWriter writer = new BufferedWriter(new FileWriter(new File(file)));
             writer.write(content);
             //writer.newLine();
@@ -66,5 +66,5 @@ public class FileIO {
         } catch (IOException e) {
             e.printStackTrace();
         }
-	}
+    }
 }
