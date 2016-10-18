@@ -63,6 +63,13 @@ public class Main {
         // genkey "password" ./out_hash.txt
         // decrypt ./cipher.txt ./out_hash.txt ./restore_plain.txt ECB
         // encrypt ./plain.txt ./out_hash.txt ./cipher.txt ECB
+        // decrypt ./cipher_cbc.txt ./out_hash.txt ./restore_plain_cbc.txt CBC
+        // encrypt ./plain.txt ./out_hash.txt ./cipher_cbc.txt CBC
+        // decrypt ./cipher_ctr.txt ./out_hash.txt ./restore_plain_ctr.txt CTR
+        // encrypt ./plain.txt ./out_hash.txt ./cipher_ctr.txt CTR
+        
+        //String [] args2 = { "decrypt", "./cipher_ctr.txt", "./out_hash.txt", "./restore_plain_ctr.txt", "CTR" };
+        //args = args2;
         
         Configuration config = parseArgument(args);
         

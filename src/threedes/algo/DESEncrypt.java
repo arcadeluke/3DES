@@ -1,8 +1,12 @@
 package threedes.algo;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+
 import threedes.app.config.BitwiseOperations;
 import threedes.app.config.Constant;
 import threedes.app.config.CryptConfig;
+import threedes.app.config.CryptMode;
 import threedes.app.config.ExecOption;
 import threedes.util.ByteArrayUtil;
 import threedes.util.FileIO;
@@ -23,7 +27,27 @@ public class DESEncrypt {
         
         assert(initKeyArray.length == 3);
         
-        return DES_Crypt(initKeyArray[2], DES_Crypt(initKeyArray[1], DES_Crypt(initKeyArray[0], plainText, ExecOption.ENCRYPT), ExecOption.DECRYPT), ExecOption.ENCRYPT);
+        CryptMode mode = config.getCryptMode();
+        
+        byte [] iv = null;
+        
+        if (mode == CryptMode.CBC)
+        {
+            iv = generateInitialVector(Constant.BLOCK_SIZE_IN_BYTE);
+        }
+        else if (mode == CryptMode.CTR)
+        {
+            iv = generateInitialVector(Constant.BLOCK_SIZE_IN_BYTE / 2);
+            System.out.println("WIV: " + ByteArrayUtil.convertByteArrayInBinaryString(iv));
+        }
+        
+        int extraByte = plainText.length % Constant.BLOCK_SIZE_IN_BYTE;
+        
+        plainText = ByteArrayUtil.appendByteArray(plainText, iPaddingTable[extraByte]);
+        
+        byte [] result = DES_Crypt(initKeyArray[2], DES_Crypt(initKeyArray[1], DES_Crypt(initKeyArray[0], plainText, ExecOption.ENCRYPT, mode, iv), ExecOption.DECRYPT, mode, iv), ExecOption.ENCRYPT, mode, iv);
+        
+        return ByteArrayUtil.appendByteArray(result, iv);
     }
     
     public static byte [] ThreeDES_Decrypt(CryptConfig config)
@@ -40,70 +64,156 @@ public class DESEncrypt {
         
         assert(initKeyArray.length == 3);
         
-        return DES_Crypt(initKeyArray[0], DES_Crypt(initKeyArray[1], DES_Crypt(initKeyArray[2], cipherText, ExecOption.DECRYPT), ExecOption.ENCRYPT), ExecOption.DECRYPT);
+        CryptMode mode = config.getCryptMode();
+        
+        byte [] iv = null;
+        
+        if (mode == CryptMode.CBC)
+        {
+            iv = ByteArrayUtil.subByteArray(cipherText, cipherText.length - Constant.BLOCK_SIZE_IN_BYTE, Constant.BLOCK_SIZE_IN_BYTE);
+            cipherText = ByteArrayUtil.subByteArray(cipherText, 0, cipherText.length - Constant.BLOCK_SIZE_IN_BYTE);
+        }
+        else if (mode == CryptMode.CTR)
+        {
+            iv = ByteArrayUtil.subByteArray(cipherText, cipherText.length - Constant.BLOCK_SIZE_IN_BYTE / 2, Constant.BLOCK_SIZE_IN_BYTE / 2);
+            System.out.println("RIV: " + ByteArrayUtil.convertByteArrayInBinaryString(iv));
+            cipherText = ByteArrayUtil.subByteArray(cipherText, 0, cipherText.length - Constant.BLOCK_SIZE_IN_BYTE / 2);
+        }
+        byte [] result = DES_Crypt(initKeyArray[0], DES_Crypt(initKeyArray[1], DES_Crypt(initKeyArray[2], cipherText, ExecOption.DECRYPT, mode, iv), ExecOption.ENCRYPT, mode, iv), ExecOption.DECRYPT, mode, iv);
+        
+        int lastByte = result[result.length - 1];
+        
+        return ByteArrayUtil.subByteArray(result, 0, result.length - lastByte);
     }
     
-    public static byte[] DES_Crypt(byte [] initKey, byte [] message, ExecOption option)
+    public static byte[] DES_Crypt(byte [] initKey, byte [] message, ExecOption option, CryptMode mode, byte [] originIV)
     {
         //System.out.println("PT: " + ByteArrayUtil.convertByteArrayInBinaryString(message));
         
+        byte [] iv = null;
         byte [][] blockedMessage = ByteArrayUtil.separateByteArrayToBlock(message, Constant.BLOCK_SIZE_IN_BYTE);
         byte [][] allKeys = DESKeyGenerator.createAllKeys(initKey);
-        
         byte [][] blockedCryptedMessage = new byte[blockedMessage.length][];
+        
+        if (mode == CryptMode.CBC || mode == CryptMode.CTR)
+        {
+            iv = originIV.clone();
+        }
         
         for(int i = 0; i < blockedMessage.length; ++i)
         {
-            byte [] permIPArray = ByteArrayUtil.applyPermTable(blockedMessage[i], PermTables.sIPTable);
-            
-            byte [] L0 = new byte[permIPArray.length / 2];
-            byte [] R0 = new byte[permIPArray.length / 2];
-            
-            ByteArrayUtil.separateByteArray(permIPArray, L0, R0);
-            
-            //System.out.println("BP: " + ByteArrayUtil.convertByteArrayInBinaryString(blockedMessage[i]));
-            //System.out.println("PR: " + ByteArrayUtil.convertByteArrayInBinaryString(permIPArray));
-            //System.out.println("L0: " + ByteArrayUtil.convertByteArrayInBinaryString(L0));
-            //System.out.println("R0: " + ByteArrayUtil.convertByteArrayInBinaryString(R0));
-            
-            byte [] LPrev = L0.clone();
-            byte [] RPrev = R0.clone();
-            
-            byte [] LNew = null;
-            byte [] RNew = null;
-            
-            for (int j = 0; j < Constant.TOTAL_KEY_NUMBER; ++j)
+            byte [] messageAboutCrypt = null;
+
+            if (mode == CryptMode.ECB)
             {
-                //System.out.println("j = " + (j+1));
-                
-                // Ln = Rn-1
-                // Rn = Ln-1 xor f(Rn-1, Kn)
-                
-                int keyIndex = j;
-                
-                if (option == ExecOption.DECRYPT)
+                messageAboutCrypt = blockedMessage[i];
+            }
+            else if (mode == CryptMode.CBC)
+            {
+                if (option == ExecOption.ENCRYPT)
                 {
-                    keyIndex = Constant.TOTAL_KEY_NUMBER - j - 1;
+                    messageAboutCrypt = ByteArrayUtil.bitwiseByteArray(iv, blockedMessage[i], BitwiseOperations.XOR);
                 }
-                
-                LNew = RPrev;
-                RNew = ByteArrayUtil.bitwiseByteArray(LPrev, f_function(RPrev, allKeys[keyIndex]), BitwiseOperations.XOR);
-                
-                LPrev = LNew;
-                RPrev = RNew;
-                
-                //System.out.println("Lj: " + ByteArrayUtil.convertByteArrayInBinaryString(LNew));
-                //System.out.println("Rj: " + ByteArrayUtil.convertByteArrayInBinaryString(RNew));
+                else if (option == ExecOption.DECRYPT)
+                {
+                    messageAboutCrypt = blockedMessage[i];
+                    if (i != 0)
+                    {
+                        iv = blockedMessage[i-1].clone();
+                    }
+                }
+            }
+            else if (mode == CryptMode.CTR)
+            {
+                byte [] counter = {0x00, 0x00, 0x00, 0x00};
+                counter[3] = (byte)i;
+                messageAboutCrypt = ByteArrayUtil.appendByteArray(iv, counter);
+                System.out.println("MAC: " + ByteArrayUtil.convertByteArrayInBinaryString(messageAboutCrypt));
+                System.out.println("MAC: " + messageAboutCrypt.length);
             }
             
-            byte [] mergeResult = ByteArrayUtil.joinByteArray(RNew, Constant.HALFBLOCK_SIZE_IN_BIT, LNew, Constant.HALFBLOCK_SIZE_IN_BIT);
+
+            byte [] messageDoneCrypt = blockCryptBox(messageAboutCrypt, allKeys, option);
             
-            byte [] finalResult = ByteArrayUtil.applyPermTable(mergeResult, PermTables.sIPInvertTable);
+            byte [] finalResult = null;
             
+            
+            if (mode == CryptMode.ECB)
+            {
+                finalResult = messageDoneCrypt;
+            }
+            else if (mode == CryptMode.CBC)
+            {
+                if (option == ExecOption.ENCRYPT)
+                {
+                    iv = messageDoneCrypt.clone();
+                    finalResult = messageDoneCrypt;
+                }
+                else if (option == ExecOption.DECRYPT)
+                {
+                    finalResult = ByteArrayUtil.bitwiseByteArray(iv, messageDoneCrypt, BitwiseOperations.XOR);
+                }
+            }
+            else if (mode == CryptMode.CTR)
+            {
+                finalResult = ByteArrayUtil.bitwiseByteArray(blockedMessage[i], messageDoneCrypt, BitwiseOperations.XOR);;
+            }
+
             blockedCryptedMessage[i] = finalResult;
         }
-        
+
         return ByteArrayUtil.mergeBlockToByteArray(blockedCryptedMessage);
+    }
+    
+    private static byte [] blockCryptBox(byte [] message, byte [][] allKeys, ExecOption option)
+    {
+        byte [] permIPArray = ByteArrayUtil.applyPermTable(message, PermTables.sIPTable);
+        
+        byte [] L0 = new byte[permIPArray.length / 2];
+        byte [] R0 = new byte[permIPArray.length / 2];
+        
+        ByteArrayUtil.separateByteArray(permIPArray, L0, R0);
+        
+        //System.out.println("BP: " + ByteArrayUtil.convertByteArrayInBinaryString(message));
+        //System.out.println("PR: " + ByteArrayUtil.convertByteArrayInBinaryString(permIPArray));
+        //System.out.println("L0: " + ByteArrayUtil.convertByteArrayInBinaryString(L0));
+        //System.out.println("R0: " + ByteArrayUtil.convertByteArrayInBinaryString(R0));
+        
+        byte [] LPrev = L0.clone();
+        byte [] RPrev = R0.clone();
+        
+        byte [] LNew = null;
+        byte [] RNew = null;
+        
+        for (int j = 0; j < Constant.TOTAL_KEY_NUMBER; ++j)
+        {
+            //System.out.println("j = " + (j+1));
+            
+            // Ln = Rn-1
+            // Rn = Ln-1 xor f(Rn-1, Kn)
+            
+            int keyIndex = j;
+            
+            if (option == ExecOption.DECRYPT)
+            {
+                keyIndex = Constant.TOTAL_KEY_NUMBER - j - 1;
+            }
+            
+            LNew = RPrev;
+            RNew = ByteArrayUtil.bitwiseByteArray(LPrev, f_function(RPrev, allKeys[keyIndex]), BitwiseOperations.XOR);
+            
+            LPrev = LNew;
+            RPrev = RNew;
+            
+            //System.out.println("Lj: " + ByteArrayUtil.convertByteArrayInBinaryString(LNew));
+            //System.out.println("Rj: " + ByteArrayUtil.convertByteArrayInBinaryString(RNew));
+        }
+        
+        byte [] mergeResult = ByteArrayUtil.joinByteArray(RNew, Constant.HALFBLOCK_SIZE_IN_BIT, LNew, Constant.HALFBLOCK_SIZE_IN_BIT);
+        
+        byte [] finalResult = ByteArrayUtil.applyPermTable(mergeResult, PermTables.sIPInvertTable);
+        
+        return finalResult;
     }
     
     private static byte [] f_function(byte [] R, byte [] K)
@@ -163,4 +273,30 @@ public class DESEncrypt {
         
         return (byte) result;
     }
+    
+    private static byte [] generateInitialVector(int nBytes)
+    {
+        SecureRandom random = null;
+        try {
+            random = SecureRandom.getInstance("SHA1PRNG");
+        } catch (NoSuchAlgorithmException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        byte iv[] = new byte[nBytes];
+        random.nextBytes(iv);
+        return iv;
+    }
+    
+    private static byte [][] iPaddingTable = 
+        {
+            {0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08},
+            {0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07},
+            {0x06, 0x06, 0x06, 0x06, 0x06, 0x06},
+            {0x05, 0x05, 0x05, 0x05, 0x05},
+            {0x04, 0x04, 0x04, 0x04},
+            {0x03, 0x03, 0x03},
+            {0x02, 0x02},
+            {0x01}
+        };
 }

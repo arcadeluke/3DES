@@ -293,6 +293,54 @@ public class ByteArrayUtil {
         return sb.toString();
     }
     
+    public static byte [] appendByteArray(byte [] array1, byte [] array2)
+    {
+        if (array1 == null)
+        {
+            return null;
+        }
+        if (array2 == null)
+        {
+            return array1;
+        }
+        
+        byte [] retArray = new byte[array1.length + array2.length];
+        
+        for (int i = 0; i < array1.length; ++i)
+        {
+            retArray[i] = array1[i];
+        }
+        
+        for(int i = 0; i < array2.length; ++i)
+        {
+            retArray[i + array1.length] = array2[i];
+        }
+        
+        return retArray;
+    }
+    
+    public static byte [] subByteArray(byte [] array, int startIndex, int nByte)
+    {
+        if (array == null || startIndex + nByte - 1 > array.length)
+        {
+            return null;
+        }
+        
+        if (nByte == array.length && startIndex == 0)
+        {
+            return array.clone();
+        }
+        
+        byte [] retArray = new byte[nByte];
+        
+        for (int i = 0; i < retArray.length; ++i)
+        {
+            retArray[i] = array[startIndex + i];
+        }
+        
+        return retArray;
+    }
+    
     public static void main(String [] args)
     {
         byte [] array = {(byte) 0x80, 0x00, (byte) 0x87, 0x20, 0x00};
