@@ -68,9 +68,6 @@ public class Main {
         // decrypt ./cipher_ctr.txt ./out_hash.txt ./restore_plain_ctr.txt CTR
         // encrypt ./plain.txt ./out_hash.txt ./cipher_ctr.txt CTR
         
-        //String [] args2 = { "decrypt", "./cipher_ctr.txt", "./out_hash.txt", "./restore_plain_ctr.txt", "CTR" };
-        //args = args2;
-        
         Configuration config = parseArgument(args);
         
         if (config.getExecOption() == ExecOption.GENKEY)

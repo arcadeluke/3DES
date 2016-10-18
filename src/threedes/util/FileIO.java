@@ -60,7 +60,6 @@ public class FileIO {
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter(new File(file)));
             writer.write(content);
-            //writer.newLine();
             writer.flush();
             writer.close();
         } catch (IOException e) {

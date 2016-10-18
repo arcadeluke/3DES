@@ -16,10 +16,9 @@ public class DESEncrypt {
 
     public static byte [] ThreeDES_Encrypt(CryptConfig config)
     {
-        //byte [] plainText = {0x01, 0x23, 0x45, 0x67, (byte) 0x89, (byte) 0xab, (byte) 0xcd, (byte) 0xef};
         byte [] plainText = FileIO.readFileToByteArray(config.getInputFilePath());
+        
         String passwordString = FileIO.readFileToString(config.getKeyFilePath(), null);
-        //System.out.println(passwordString);
         byte [] initKeys = TextBinaryConverter.stringToByteArray(passwordString);
         
         // three init keys
@@ -38,25 +37,31 @@ public class DESEncrypt {
         else if (mode == CryptMode.CTR)
         {
             iv = generateInitialVector(Constant.BLOCK_SIZE_IN_BYTE / 2);
-            System.out.println("WIV: " + ByteArrayUtil.convertByteArrayInBinaryString(iv));
         }
         
         int extraByte = plainText.length % Constant.BLOCK_SIZE_IN_BYTE;
         
         plainText = ByteArrayUtil.appendByteArray(plainText, iPaddingTable[extraByte]);
         
-        byte [] result = DES_Crypt(initKeyArray[2], DES_Crypt(initKeyArray[1], DES_Crypt(initKeyArray[0], plainText, ExecOption.ENCRYPT, mode, iv), ExecOption.DECRYPT, mode, iv), ExecOption.ENCRYPT, mode, iv);
+        byte [] result = null;
+        
+        if (mode == CryptMode.CTR)
+        {
+            result = DES_Crypt(initKeyArray[2], DES_Crypt(initKeyArray[1], DES_Crypt(initKeyArray[0], plainText, ExecOption.ENCRYPT, mode, iv), ExecOption.ENCRYPT, mode, iv), ExecOption.ENCRYPT, mode, iv);
+        }
+        else
+        {
+            result = DES_Crypt(initKeyArray[2], DES_Crypt(initKeyArray[1], DES_Crypt(initKeyArray[0], plainText, ExecOption.ENCRYPT, mode, iv), ExecOption.DECRYPT, mode, iv), ExecOption.ENCRYPT, mode, iv);
+        }
         
         return ByteArrayUtil.appendByteArray(result, iv);
     }
     
     public static byte [] ThreeDES_Decrypt(CryptConfig config)
     {
-        //byte [] cipherText = {0x01, 0x23, 0x45, 0x67, (byte) 0x89, (byte) 0xab, (byte) 0xcd, (byte) 0xef};
         byte [] cipherText = FileIO.readFileToByteArray(config.getInputFilePath());
-        //byte [] cipherText = FileIO.readFileToByteArray("./cipher.txt");
+        
         String passwordString = FileIO.readFileToString(config.getKeyFilePath(), null);
-        //System.out.println(passwordString);
         byte [] initKeys = TextBinaryConverter.stringToByteArray(passwordString);
         
         // three init keys
@@ -76,10 +81,19 @@ public class DESEncrypt {
         else if (mode == CryptMode.CTR)
         {
             iv = ByteArrayUtil.subByteArray(cipherText, cipherText.length - Constant.BLOCK_SIZE_IN_BYTE / 2, Constant.BLOCK_SIZE_IN_BYTE / 2);
-            System.out.println("RIV: " + ByteArrayUtil.convertByteArrayInBinaryString(iv));
             cipherText = ByteArrayUtil.subByteArray(cipherText, 0, cipherText.length - Constant.BLOCK_SIZE_IN_BYTE / 2);
         }
-        byte [] result = DES_Crypt(initKeyArray[0], DES_Crypt(initKeyArray[1], DES_Crypt(initKeyArray[2], cipherText, ExecOption.DECRYPT, mode, iv), ExecOption.ENCRYPT, mode, iv), ExecOption.DECRYPT, mode, iv);
+        
+        byte [] result = null;
+        
+        if (mode == CryptMode.CTR)
+        {
+            result = DES_Crypt(initKeyArray[0], DES_Crypt(initKeyArray[1], DES_Crypt(initKeyArray[2], cipherText, ExecOption.ENCRYPT, mode, iv), ExecOption.ENCRYPT, mode, iv), ExecOption.ENCRYPT, mode, iv);
+        }
+        else
+        {
+            result = DES_Crypt(initKeyArray[0], DES_Crypt(initKeyArray[1], DES_Crypt(initKeyArray[2], cipherText, ExecOption.DECRYPT, mode, iv), ExecOption.ENCRYPT, mode, iv), ExecOption.DECRYPT, mode, iv);
+        }
         
         int lastByte = result[result.length - 1];
         
@@ -87,9 +101,7 @@ public class DESEncrypt {
     }
     
     public static byte[] DES_Crypt(byte [] initKey, byte [] message, ExecOption option, CryptMode mode, byte [] originIV)
-    {
-        //System.out.println("PT: " + ByteArrayUtil.convertByteArrayInBinaryString(message));
-        
+    {        
         byte [] iv = null;
         byte [][] blockedMessage = ByteArrayUtil.separateByteArrayToBlock(message, Constant.BLOCK_SIZE_IN_BYTE);
         byte [][] allKeys = DESKeyGenerator.createAllKeys(initKey);
@@ -128,10 +140,7 @@ public class DESEncrypt {
                 byte [] counter = {0x00, 0x00, 0x00, 0x00};
                 counter[3] = (byte)i;
                 messageAboutCrypt = ByteArrayUtil.appendByteArray(iv, counter);
-                System.out.println("MAC: " + ByteArrayUtil.convertByteArrayInBinaryString(messageAboutCrypt));
-                System.out.println("MAC: " + messageAboutCrypt.length);
             }
-            
 
             byte [] messageDoneCrypt = blockCryptBox(messageAboutCrypt, allKeys, option);
             
@@ -174,11 +183,6 @@ public class DESEncrypt {
         
         ByteArrayUtil.separateByteArray(permIPArray, L0, R0);
         
-        //System.out.println("BP: " + ByteArrayUtil.convertByteArrayInBinaryString(message));
-        //System.out.println("PR: " + ByteArrayUtil.convertByteArrayInBinaryString(permIPArray));
-        //System.out.println("L0: " + ByteArrayUtil.convertByteArrayInBinaryString(L0));
-        //System.out.println("R0: " + ByteArrayUtil.convertByteArrayInBinaryString(R0));
-        
         byte [] LPrev = L0.clone();
         byte [] RPrev = R0.clone();
         
@@ -187,8 +191,6 @@ public class DESEncrypt {
         
         for (int j = 0; j < Constant.TOTAL_KEY_NUMBER; ++j)
         {
-            //System.out.println("j = " + (j+1));
-            
             // Ln = Rn-1
             // Rn = Ln-1 xor f(Rn-1, Kn)
             
@@ -204,9 +206,6 @@ public class DESEncrypt {
             
             LPrev = LNew;
             RPrev = RNew;
-            
-            //System.out.println("Lj: " + ByteArrayUtil.convertByteArrayInBinaryString(LNew));
-            //System.out.println("Rj: " + ByteArrayUtil.convertByteArrayInBinaryString(RNew));
         }
         
         byte [] mergeResult = ByteArrayUtil.joinByteArray(RNew, Constant.HALFBLOCK_SIZE_IN_BIT, LNew, Constant.HALFBLOCK_SIZE_IN_BIT);
@@ -225,10 +224,6 @@ public class DESEncrypt {
         
         byte [] ERNew = ByteArrayUtil.applyPermTable(R, PermTables.sExpansionTable);
         byte [] sboxVal = ByteArrayUtil.bitwiseByteArray(ERNew, K, BitwiseOperations.XOR);
-        
-        //System.out.println("    ERNew: " + ByteArrayUtil.convertByteArrayInBinaryString(ERNew));
-        //System.out.println("    SBox: " + ByteArrayUtil.convertByteArrayInBinaryString(sboxVal));
-        
         byte [] sboxOutVal = new byte[R.length];
         
         // shall be 48 bits / 6 bits = 8
@@ -246,10 +241,7 @@ public class DESEncrypt {
             sboxOutVal[i / 2] = twoBlock;
         }
         
-        //System.out.println("    SBoxF: " + ByteArrayUtil.convertByteArrayInBinaryString(sboxOutVal));
-        
         byte [] retVal = ByteArrayUtil.applyPermTable(sboxOutVal, PermTables.sSBoxPermTable);
-        //System.out.println("    SBoxR: " + ByteArrayUtil.convertByteArrayInBinaryString(retVal));
         
         return retVal;
     }
@@ -269,8 +261,6 @@ public class DESEncrypt {
         
         int result = PermTables.sSTables[s][row * Constant.S_BOX_ROW_LENGTH + column];
         
-        //System.out.println("    origin/s/row/column/result: " + origin + " " + s + " " + row + " " + column + " " + result);
-        
         return (byte) result;
     }
     
@@ -280,7 +270,6 @@ public class DESEncrypt {
         try {
             random = SecureRandom.getInstance("SHA1PRNG");
         } catch (NoSuchAlgorithmException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         byte iv[] = new byte[nBytes];
