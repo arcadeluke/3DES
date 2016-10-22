@@ -22,7 +22,7 @@ public class DESEncrypt {
         byte [] initKeys = TextBinaryConverter.stringToByteArray(passwordString);
         
         // three init keys
-        byte [][] initKeyArray = ByteArrayUtil.separateByteArrayToBlock(initKeys, Constant.KEY_SIZE_IN_BYTE);
+        byte [][] initKeyArray = ByteArrayUtil.separateByteArrayToBlock(initKeys, Constant.ORIGIN_THREEKEY_SIZE_IN_BYTE);
         
         assert(initKeyArray.length == 3);
         
@@ -65,7 +65,7 @@ public class DESEncrypt {
         byte [] initKeys = TextBinaryConverter.stringToByteArray(passwordString);
         
         // three init keys
-        byte [][] initKeyArray = ByteArrayUtil.separateByteArrayToBlock(initKeys, Constant.KEY_SIZE_IN_BYTE);
+        byte [][] initKeyArray = ByteArrayUtil.separateByteArrayToBlock(initKeys, Constant.ORIGIN_THREEKEY_SIZE_IN_BYTE);
         
         assert(initKeyArray.length == 3);
         
@@ -272,8 +272,9 @@ public class DESEncrypt {
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
-        byte iv[] = new byte[nBytes];
-        random.nextBytes(iv);
+        //byte iv[] = new byte[nBytes];
+        //random.nextBytes(iv);
+        byte [] iv = {0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08};
         return iv;
     }
     

@@ -13,6 +13,8 @@ public class DESKeyGenerator {
         byte [] C0 = {0x00, 0x00, 0x00, 0x00};
         byte [] D0 = {0x00, 0x00, 0x00, 0x00};
         
+        initKey = ByteArrayUtil.applyPermTable(initKey, PermTables.sPC1Table);
+        
         ByteArrayUtil.separateByteArray(initKey, C0, D0);
         
         byte [] CPrev = C0.clone();

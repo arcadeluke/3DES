@@ -28,7 +28,7 @@ public class PasswordHasher {
             digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(genKeyConfig.getPassword().getBytes(StandardCharsets.UTF_8));
             
-            byte[] threeKey = new byte[Constant.THREEKEY_SIZE_IN_BIT / Constant.BITS_OF_BYTE];  // 168 / 8 = 21
+            byte[] threeKey = new byte[Constant.ORIGIN_THREEKEY_SIZE_IN_BIT / Constant.BITS_OF_BYTE];  // 192 / 8 = 21
             
             for (int i = 0; i < threeKey.length; ++i)
             {

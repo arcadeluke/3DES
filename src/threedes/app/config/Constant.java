@@ -9,8 +9,11 @@ public class Constant {
     public static final int HALFBLOCK_SIZE_IN_BIT = BLOCK_SIZE_IN_BIT / 2;
     public static final int BLOCK_SIZE_IN_BYTE = BLOCK_SIZE_IN_BIT / BITS_OF_BYTE;
     
+    public static final int ORIGIN_KEY_SIZE_IN_BIT = 64;
     public static final int KEY_SIZE_IN_BIT = 56;
     public static final int KEY_SIZE_IN_BYTE = KEY_SIZE_IN_BIT / BITS_OF_BYTE;
+    public static final int ORIGIN_THREEKEY_SIZE_IN_BIT = ORIGIN_KEY_SIZE_IN_BIT * 3;
+    public static final int ORIGIN_THREEKEY_SIZE_IN_BYTE = ORIGIN_KEY_SIZE_IN_BIT / BITS_OF_BYTE;
     public static final int THREEKEY_SIZE_IN_BIT = KEY_SIZE_IN_BIT * 3;
     public static final int HALF_KEY_SIZE_IN_BIT = KEY_SIZE_IN_BIT / 2;
     

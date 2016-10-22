@@ -8,6 +8,7 @@ import threedes.app.config.CryptMode;
 import threedes.app.config.ExecOption;
 import threedes.app.config.GenKeyConfig;
 import threedes.util.FileIO;
+import threedes.util.TextBinaryConverter;
 
 public class Main {
     
@@ -78,7 +79,7 @@ public class Main {
         else if (config.getExecOption() == ExecOption.ENCRYPT)
         {
             byte [] cipher = DESEncrypt.ThreeDES_Encrypt((CryptConfig)config);
-            String result = new String(cipher);
+            String result = TextBinaryConverter.byteArrayToString(cipher);//new String(cipher);
             System.out.println("Cipher: " + result);
             FileIO.writeBinaryFile(((CryptConfig)config).getOutputFilePath(), cipher);
         }
