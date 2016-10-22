@@ -272,9 +272,9 @@ public class DESEncrypt {
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
-        //byte iv[] = new byte[nBytes];
-        //random.nextBytes(iv);
-        byte [] iv = {0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08};
+        byte iv[] = new byte[nBytes];
+        random.nextBytes(iv);
+
         return iv;
     }
     
