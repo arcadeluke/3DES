@@ -283,9 +283,9 @@ public class DESEncrypt {
     private static byte [] counterGenerator()
     {
         byte [] counter = {0x00, 0x00, 0x00, 0x00};
-        counter[0] = (byte) ((sCounter & 0xff000000) >>> 6);
-        counter[1] = (byte) ((sCounter & 0x00ff0000) >>> 4);
-        counter[2] = (byte) ((sCounter & 0x0000ff00) >>> 2);
+        counter[0] = (byte) ((sCounter & 0xff000000) >>> (3 * Constant.BITS_OF_BYTE));
+        counter[1] = (byte) ((sCounter & 0x00ff0000) >>> (2 * Constant.BITS_OF_BYTE));
+        counter[2] = (byte) ((sCounter & 0x0000ff00) >>> (1 * Constant.BITS_OF_BYTE));
         counter[3] = (byte) (sCounter & 0x000000ff);
         ++sCounter;
         return counter;
