@@ -73,22 +73,36 @@ public class Main {
         
         if (config.getExecOption() == ExecOption.GENKEY)
         {
+            long currentTime = System.currentTimeMillis();
             FileIO.writeTextFile(((GenKeyConfig)config).getOutputFilePath(), PasswordHasher.generateSHA256(config));
-            System.out.println("Key written.");
+            long genKeyDoneTime = System.currentTimeMillis();
+            
+            float cryptDurationInSec = ((float)(genKeyDoneTime - currentTime)/1000.0f);
+            System.out.println("Key written. GenKey: " + cryptDurationInSec + " secs.");
         }
         else if (config.getExecOption() == ExecOption.ENCRYPT)
         {
+            long currentTime = System.currentTimeMillis();
             byte [] cipher = DESEncrypt.ThreeDES_Encrypt((CryptConfig)config);
-            String result = TextBinaryConverter.byteArrayToString(cipher);//new String(cipher);
-            System.out.println("Cipher: " + result);
+            long cryptDoneTime = System.currentTimeMillis();
             FileIO.writeBinaryFile(((CryptConfig)config).getOutputFilePath(), cipher);
+            long fileDoneTime = System.currentTimeMillis();
+            
+            float cryptDurationInSec = ((float)(cryptDoneTime - currentTime)/1000.0f);
+            float fileDurationInSec = ((float)(fileDoneTime - cryptDoneTime)/1000.0f);
+            System.out.println("Cipher written. Crypt: " + cryptDurationInSec + " secs, writeDisk: " + fileDurationInSec + " secs." );
         }
         else if (config.getExecOption() == ExecOption.DECRYPT)
         {
+            long currentTime = System.currentTimeMillis();
             byte [] plain = DESEncrypt.ThreeDES_Decrypt((CryptConfig)config);
-            String result = new String(plain);
-            System.out.println("Plain: " + result);
+            long cryptDoneTime = System.currentTimeMillis();
             FileIO.writeBinaryFile(((CryptConfig)config).getOutputFilePath(), plain);
+            long fileDoneTime = System.currentTimeMillis();
+            
+            float cryptDurationInSec = ((float)(cryptDoneTime - currentTime)/1000.0f);
+            float fileDurationInSec = ((float)(fileDoneTime - cryptDoneTime)/1000.0f);
+            System.out.println("Plain written. Crypt: " + cryptDurationInSec + " secs, writeDisk: " + fileDurationInSec + " secs." );
         }
         else
         {
