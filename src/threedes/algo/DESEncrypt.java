@@ -110,6 +110,7 @@ public class DESEncrypt {
         if (mode == CryptMode.CBC || mode == CryptMode.CTR)
         {
             iv = originIV.clone();
+            resetCounter();
         }
         
         for(int i = 0; i < blockedMessage.length; ++i)
@@ -137,8 +138,7 @@ public class DESEncrypt {
             }
             else if (mode == CryptMode.CTR)
             {
-                byte [] counter = {0x00, 0x00, 0x00, 0x00};
-                counter[3] = (byte)i;
+                byte [] counter = counterGenerator();
                 messageAboutCrypt = ByteArrayUtil.appendByteArray(iv, counter);
             }
 
@@ -276,6 +276,24 @@ public class DESEncrypt {
         random.nextBytes(iv);
 
         return iv;
+    }
+    
+    private static int sCounter = 0;
+    
+    private static byte [] counterGenerator()
+    {
+        byte [] counter = {0x00, 0x00, 0x00, 0x00};
+        counter[0] = (byte) ((sCounter & 0xff000000) >>> 6);
+        counter[1] = (byte) ((sCounter & 0x00ff0000) >>> 4);
+        counter[2] = (byte) ((sCounter & 0x0000ff00) >>> 2);
+        counter[3] = (byte) (sCounter & 0x000000ff);
+        ++sCounter;
+        return counter;
+    }
+    
+    private static void resetCounter()
+    {
+        sCounter = 0;
     }
     
     private static byte [][] iPaddingTable = 
